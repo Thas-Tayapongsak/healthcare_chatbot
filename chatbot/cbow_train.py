@@ -136,9 +136,7 @@ def trainCBOW():
             optimizer.step()
             total_loss += loss.item()
 
-        losses.append(total_loss)
-
-        print(f'Epoch [{epoch+1}/{NUM_EPOCH}], Loss: {loss.item():.4f}')
+        print(f'Epoch [{epoch+1}/{NUM_EPOCH}], Loss: {total_loss:.4f}')
 
     torch.save(model, "./weights/cbow.pt")
 
