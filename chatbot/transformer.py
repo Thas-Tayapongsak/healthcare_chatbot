@@ -15,6 +15,15 @@ class Preprocess():
         s += "<|endoftext|>"
         return Preprocess.tokenizer.encode(s, allowed_special={"<|endoftext|>"})
     
+    def embed(tokens):
+        model = torch.load("./weights/cbow.pt")
+        model.eval()
+
+        embed_mat = model.embed.weight.detach()
+
+        embedding = embed_mat[tokens]
+        
+        return embedding
     
 class CBOW(nn.Module):
     def __init__(self, vocab_size, d_model, window_size):
@@ -30,6 +39,7 @@ class CBOW(nn.Module):
 
         return log_probs
 
+#TODO: PositionalEncoding
 
 class MultiHeadAttention(nn.Module):
     def __init__(self, d_model, num_heads):
@@ -76,3 +86,5 @@ class MultiHeadAttention(nn.Module):
         attn_output = self.scaled_dot_product_attention(Q, K, V, mask)
         output = self.W_o(self.combine_heads(attn_output))
         return output
+    
+#TODO: Encoder, Decoder, Transformer

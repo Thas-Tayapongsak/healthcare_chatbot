@@ -1,6 +1,6 @@
 import json
-import chatbot
-from chatbot import Preprocess
+import transformer
+from transformer import Preprocess
 
 # tokenize = Preprocess.tokenize
 # tokenizer = Preprocess.tokenizer
@@ -14,7 +14,6 @@ from chatbot import Preprocess
 # print(tokenizer.decode(tokenize('What is an A1C test?')))
 
 WINDOW_SIZE = 3
-
 
 def createcorpus():
     """Create corpus from tokenized sequences
@@ -78,47 +77,88 @@ def int2onehot(num):
     onehot[num] = 1
     return onehot
 
+def embedCBOW(s, embed_mat):
+    """For testing with string
+
+    Parameter
+    ---------
+    s : string
+    embed_mat 
+
+    Returns
+    -------
+    embedding : tensor
+        list of embeddings
+
+    """
+
+    tokens = Preprocess.tokenize(s)
+    # print(tokens)
+    embedding = embed_mat[tokens]
+
+    return embedding
+
 
 ### train CBOW
-from chatbot import CBOW
+from transformer import CBOW
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import numpy
 
 VOCAB_SIZE = 50257 
 D_MODEL = 20
-NUM_EPOCH = 4
+NUM_EPOCH = 2
 
+# define model
 model = CBOW(VOCAB_SIZE, D_MODEL, WINDOW_SIZE)
 optimizer = optim.Adam(model.parameters(), lr=0.01)
 criterion = nn.NLLLoss()
 losses = []
-corpus = createcorpus()
-ct_pairs = create_CT_pairs(corpus)
 
-for epoch in range(NUM_EPOCH):
-    total_loss = 0
-    for ct_pair in ct_pairs[:100]:
-        target = int2onehot(ct_pair[0])
-        context = torch.LongTensor(ct_pair[1]).unsqueeze(1)
-        model.zero_grad()
-        pred = model(context).squeeze()
-        loss = criterion(pred, target)
-        loss.backward()
-        optimizer.step()
-        total_loss += loss.item()
+def trainCBOW():
+    """Call to train CBOW again
+    """
+    corpus = createcorpus()
+    ct_pairs = create_CT_pairs(corpus)
 
-    losses.append(total_loss)
+    # print(len(ct_pairs))
 
-    print(f'Epoch [{epoch+1}/{NUM_EPOCH}], Loss: {loss.item():.4f}')
+    for epoch in range(NUM_EPOCH):
+        total_loss = 0
+        for ct_pair in ct_pairs[:1000]:
+            target = int2onehot(ct_pair[0])
+            context = torch.LongTensor(ct_pair[1]).unsqueeze(1)
+            model.zero_grad()
+            pred = model(context).squeeze()
+            loss = criterion(pred, target)
+            loss.backward()
+            optimizer.step()
+            total_loss += loss.item()
 
-torch.save(model, "./weights/cbow.pt")
+        losses.append(total_loss)
 
-model = torch.load("./weights/cbow.pt")
-model.eval()
+        print(f'Epoch [{epoch+1}/{NUM_EPOCH}], Loss: {loss.item():.4f}')
 
-embed_mat = model.embed.weight.detach()
+    torch.save(model, "./weights/cbow.pt")
 
-print(embed_mat[317])
-print(embed_mat[17])
-print(embed_mat[34])
+### to train
+# trainCBOW()
+
+
+### test use
+# model = torch.load("./weights/cbow.pt")
+# model.eval()
+
+# embed_mat = model.embed.weight.detach()
+# cbow_embedding = embedCBOW('Our find a doctor tool assists you in choosing from our diverse pool of health specialists. Discover better health & wellness by using our doctor ratings & reviews to make your choice.', embed_mat)
+# print(cbow_embedding)
+
+
+### example to see tokens and their corresponding embedding
+# tokenizer = Preprocess.tokenizer
+# embedCBOW_tokens = Preprocess.embed
+# with open('qna_tokenized.json', 'r', encoding='utf-8') as f:
+#     qna_list = json.load(f)
+# question = qna_list[0]['question']
+# print([(tokenizer.decode([key]),value) for key, value in zip(question,embedCBOW_tokens(question))])
