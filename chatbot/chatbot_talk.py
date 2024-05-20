@@ -7,6 +7,7 @@ transformer1.eval()
 
 tokenize = Preprocess.tokenize
 tokenizer = Preprocess.tokenizer
+# change input here vvvv
 input_seq  = torch.LongTensor(tokenize('What are the causes and symptoms of trichinellosis?'))
 output_seq = torch.LongTensor([50256])
 max_output_seq = 100
